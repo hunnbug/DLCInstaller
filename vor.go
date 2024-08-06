@@ -3,49 +3,40 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/sqweek/dialog"
 )
 
-func checkError(e error) {
+func check(e error) {
 	if e != nil {
-		fmt.Println("Error occured while reading directory: ", e)
-		return
+		panic(e)
 	}
 }
 
 func main() {
 
-	files, err := os.ReadDir("/test/")
-	checkError(err)
+	pathToInstall, err := dialog.Directory().Title("Choose a civ6 folder: ").Browse()
+	if err != nil {
+		fmt.Println("an error occured while opening civ6 directory: ", err)
+		return
+	}
 
-	fmt.Println("files in test:")
-	for _, item := range files {
-		fmt.Println(item)
+	pathToInstall = pathToInstall + "/Base/Binaries/Win64Steam/"
 
-		filePath := "/test/" + item.Name()
+	currentDir, err := os.Getwd()
+	check(err)
+
+	filesToInsert, err := os.ReadDir(currentDir + "/files")
+	check(err)
+
+	for _, item := range filesToInsert {
+
+		filePath := currentDir + "/files/" + item.Name()
 
 		file, err := os.ReadFile(filePath)
-		checkError(err)
+		check(err)
 
-		dump := []byte(file)
-		os.WriteFile("/test2/", dump, 0644)
-
-		newFilePath := "/test2/" + item.Name()
-		f, err := os.Create(newFilePath)
-		checkError(err)
-
-		defer f.Close()
+		os.WriteFile(pathToInstall+item.Name(), file, 0644)
 	}
-
-	files, err = os.ReadDir("/test2/")
-	checkError(err)
-
-	fmt.Println("files in test2:")
-	if files != nil {
-		for _, item := range files {
-			fmt.Println(item)
-		}
-	} else {
-		fmt.Println("no new files in test2")
-	}
-
+	fmt.Println("success!")
 }
